@@ -19,7 +19,6 @@ app.use(cors({
 }))
 app.use(express.json());
 
-
 app.get('/', async (request, response) => {
     const file = fs.createReadStream('data/tree_data.csv');
     
@@ -48,19 +47,66 @@ app.get('/', async (request, response) => {
                     };
                 };
 
-                localStorage.setItem('tree_data', results.data);
-                
-                resolve(results);
+                localStorage.setItem('tree_data', JSON.stringify(results.data) );
+
+                resolve(results.data);
             },
         })
     }).then(results => {
-        response.status(201).send(results.data);
+        response.status(201).send(results);
     }).catch( error => {
         console.log(error);    
         response.status(503).send('Service Unavailable');
     })
 
     const results = await readFilePromise(file);
+
+})
+
+app.post('/update', (request, response) => {
+    if (!request.body){
+        response.status(400).send('Bad Request');
+    }
+
+    const data = request.body;
+    const treeData = JSON.parse(localStorage.getItem('tree_data'));
+
+    var result = treeData.find(x => {
+        return x.id == data.id
+    });
+
+    if (result && result.read_only < 1) {
+        result.name = data.name;
+        response.status(204).send('Update Success');
+    } else {
+        response.status(405).send('Error, this node is read only');
+    }
+
+})
+
+app.post('/delete', (request, response) => {
+    if (!request.body){
+        response.status(400).send('Bad Request');
+    }
+
+    const data = request.body;
+    const treeData = JSON.parse(localStorage.getItem('tree_data'));
+
+    var result = treeData.find( (x,i) => {
+        if ( x.id == data.id ) {
+            index = i;
+            return true;
+        }
+    });
+
+    if (result && result.read_only < 1) {
+        treeData.splice(index,1);
+        
+        console.log(treeData);
+        response.status(204).send('Delete Success');
+    } else {
+        response.status(405).send('Error, this node is read only');
+    }
 
 })
 

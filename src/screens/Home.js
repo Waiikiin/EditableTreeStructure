@@ -14,19 +14,38 @@ function Home() {
     })
   }
 
-  const update_node = async () => {
+  const update_node = async (id, name) => {
     const response = await axios ({
-      method: 'get',
-      url: `/`, 
+      method: 'post',
+      url: `/update`,
+      data: {
+        id: id,
+        name: name,
+      }
     }).then(response => {
       console.log(response);
     }).catch(err => {
       console.error(err);
     })
-}
+  }
 
-  get_tree();
+  const delete_node = async (id) => {
+    const response = await axios ({
+      method: 'post',
+      url: `/delete`,
+      data: {
+        id: id,
+      }
+    }).then(response => {
+      console.log(response);
+    }).catch(err => {
+      console.error(err);
+    })
+  }
 
+  // get_tree();
+  // update_node(2, 'node123')
+  delete_node(2);
   return (
     <div>
       <p> I'm in HomeScreen </p>
