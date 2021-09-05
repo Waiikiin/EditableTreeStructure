@@ -45,14 +45,15 @@ function Home() {
 
   const create_node = async (parentId, node) => {
     const response = await axios ({
-      // headers: {
-      //   'Content-Type': 'application/json'
-      // }
       method: 'post',
       url: `/create`,
       data: {
         parentId: parentId,
-        node: node,
+        node: {
+          id: '',
+          parent: '',
+          ...node,
+        },
       }
     }).then(response => {
       console.log(response);
@@ -60,18 +61,40 @@ function Home() {
       console.error(err);
     })
   }
-  get_tree();
-  // update_node(30, 'node123')
-  // delete_node(2);
-  const dummy_node = {
-    id:'31',
-    name: "dummyNode",
-    description: "just a dummy node",
-    read_only: '1',
+
+  const convertToCSV = async () => {
+    const response = await axios ({
+      method: 'get',
+      url: `/export`,
+    }).then(response => {
+      const blob = new Blob([response.data], {type: 'text/csv'});
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'download.csv');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      console.log(response);
+    }).catch(err => {
+      console.error(err);
+    })
   }
 
-  // create_node(3, dummy_node) 
-  return (
+  const dummy_node = {
+    name: "dummyNode",
+    description: "just a dummy node",
+    read_only: '0',
+  }
+
+  // convertToCSV();
+  // get_tree();
+  // update_node(30, 'node123')
+  // delete_node(2);
+  // create_node(5, dummy_node) 
+
+  return ( 
     <div>
       <p> I'm in HomeScreen </p>
     </div>

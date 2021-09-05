@@ -53,7 +53,6 @@ app.get('/', async (request, response) => {
                     //     tree.push(node);
                     // };
                 };
-
                 localStorage.setItem('tree_data', JSON.stringify(results.data) );
 
                 resolve(results.data);
@@ -62,12 +61,32 @@ app.get('/', async (request, response) => {
     }).then(results => {
         response.status(201).send(results);
     }).catch( error => {
-        console.log(error);    
+        console.error(error);    
         response.status(503).send('Service Unavailable');
     })
 
     const results = await readFilePromise(file);
 
+})
+
+
+app.get('/export', (request, response) => {
+    const treeData = JSON.parse(localStorage.getItem('tree_data'));
+
+    // remove the children
+    treeData.forEach(x => {
+        delete x.children;
+    })
+
+    // const readFilePromise = (treeData) => new Promise ((resolve, reject) => {
+    const csv = papa.unparse(treeData, {
+        delimiter: '\t',
+        header: true,
+        newline: '\r\n',
+    })
+
+
+    response.status(201).send(csv);
 })
 
 app.post('/update', (request, response) => {
@@ -84,7 +103,8 @@ app.post('/update', (request, response) => {
 
     if (result && result.read_only < 1) {
         result.name = data.name;
-
+        localStorage.setItem('tree_data', JSON.stringify(treeData) );
+        
         response.status(204).send('Update Success');
     } else {
         response.status(405).send('Error, this node is read only');
@@ -100,7 +120,7 @@ app.post('/delete', (request, response) => {
     const data = request.body;
     const treeData = JSON.parse(localStorage.getItem('tree_data'));
 
-    var result = treeData.find( (x,i) => {
+    var result = treeData.find((x,i) => {
         if ( x.id == data.id ) {
             index = i;
             return true;
@@ -109,16 +129,13 @@ app.post('/delete', (request, response) => {
 
     if (result && result.read_only < 1) {
         treeData.splice(index,1);
-        
-        console.log(treeData);
+        localStorage.setItem('tree_data', JSON.stringify(treeData) );
         response.status(204).send('Delete Success');
     } else {
         response.status(405).send('Error, this node is read only');
     }
 
 })
-
-// localStorage.removeItem('tree_data');
 
 app.post('/create', (request, response) => {
     if (!request.body){
@@ -128,11 +145,12 @@ app.post('/create', (request, response) => {
     const data = request.body;
     const treeData = JSON.parse(localStorage.getItem('tree_data'));
 
-    data.node['id'] = parseInt(data.node['id']);
     data.node["children"] = []; // initializing children 
     data.node["parent"] = data.parentId;
 
+    data.node['id'] = parseInt(treeData[treeData.length-1].id) + 1;
 
+    // make sure the array that contains the tree is still in order after inserting this new node
     var index = -1;
     var middleIndex = -1
     treeData.forEach((x,i) => {
@@ -147,12 +165,14 @@ app.post('/create', (request, response) => {
     index++;
     middleIndex++;
 
-    // if the new node finds space in the middle of the tree
+    // if the new node fits in the middle of the tree, otherwise
     if (index < middleIndex) {
         treeData.splice(middleIndex, 0, data.node);
     } else {
         treeData.splice(index, 0, data.node);
     }
+
+    treeData.splice(middleIndex, 0, data.node);
    
     var parentIndex = treeData.findIndex(x => {
         return x.id == data.parentId
@@ -163,10 +183,8 @@ app.post('/create', (request, response) => {
     }
 
     treeData[parentIndex].children.push(data.node);
-
-    console.log(treeData);
-    response.status(204).send('Update Success');
-
+    localStorage.setItem('tree_data', JSON.stringify(treeData) );
+    response.status(204).send(`Create Success, created id: ${data.node.id}`);
 })
 
 app.listen(port, () => {
