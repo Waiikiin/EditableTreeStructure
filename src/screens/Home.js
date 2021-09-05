@@ -3,32 +3,30 @@ import axios from '../utils/axios';
 
 function Home() {
 
-    const getRequest = async () => {
-  
-      const response = await axios ({
-        method: 'get',    
-        url: `/`,
-    }).then( response => {
+  const get_tree = async () => {
+    const response = await axios ({
+      method: 'get',
+      url: `/`, 
+    }).then(response => {
       console.log(response);
     }).catch(err => {
       console.error(err);
     })
   }
 
-  //   const get_tree = async () => {
-  //     var formData = new FormData();
-  //     formData.append('file', '../data/tree_data.csv');
-  //     const response = await axios ({
-  //       method: 'get',
-  //       data: formData,
-  //       url: `/getTree`,
-  //   }).then( response => {
-  //     console.log(response);
-  //   }).catch(err => {
-  //     console.error(err);
-  //   })
-  // }
-  getRequest();
+  const update_node = async () => {
+    const response = await axios ({
+      method: 'get',
+      url: `/`, 
+    }).then(response => {
+      console.log(response);
+    }).catch(err => {
+      console.error(err);
+    })
+}
+
+  get_tree();
+
   return (
     <div>
       <p> I'm in HomeScreen </p>

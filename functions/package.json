@@ -15,9 +15,12 @@
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^9.8.0",
-    "firebase-functions": "^3.14.1"
+    "firebase-functions": "^3.14.1",
+    "node-localstorage": "^2.2.1",
+    "papaparse": "^5.3.1"
   },
   "devDependencies": {
+    "start": "nodemon -- inspect",
     "eslint": "^7.6.0",
     "eslint-config-google": "^0.14.0",
     "firebase-functions-test": "^0.2.0"
