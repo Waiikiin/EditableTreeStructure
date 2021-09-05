@@ -5,6 +5,7 @@ const { request, response } = require("express");
 
 const fs = require('fs');
 const papa = require('papaparse');
+const { trace } = require("console");
 
 if (typeof localStorage === "undefined" || localStorage === null) {
     var LocalStorage = require('node-localstorage').LocalStorage;
@@ -29,10 +30,15 @@ app.get('/', async (request, response) => {
             complete: function(results, file) {
                 
                 const arr = results.data;
-                let map = {}, node, tree = [], i;
+                let map = {}, node, i;
+                // let tree = []
 
+                // must sort the array in a map first
                 for (i = 0; i < arr.length; i += 1) {
-                    map[arr[i].id] = i; // initializing map
+                    // initializing map
+                    // sort out the index of array id in map
+                    // key: id, value: index in the array
+                    map[arr[i].id] = i; 
                     arr[i]["children"] = []; // initializing children 
                 };
 
@@ -40,11 +46,12 @@ app.get('/', async (request, response) => {
                 for (i = 0; i < arr.length; i += 1) {
                     node = arr[i];
                     if (node.parent !== "0") {
+                        // get the parent id, grab the index in map, access it in array
                         arr[map[node.parent]].children.push(node); // push node to parent
                     }
-                    else {
-                        tree.push(node);
-                    };
+                    // else {
+                    //     tree.push(node);
+                    // };
                 };
 
                 localStorage.setItem('tree_data', JSON.stringify(results.data) );
@@ -77,6 +84,7 @@ app.post('/update', (request, response) => {
 
     if (result && result.read_only < 1) {
         result.name = data.name;
+
         response.status(204).send('Update Success');
     } else {
         response.status(405).send('Error, this node is read only');
@@ -107,6 +115,57 @@ app.post('/delete', (request, response) => {
     } else {
         response.status(405).send('Error, this node is read only');
     }
+
+})
+
+// localStorage.removeItem('tree_data');
+
+app.post('/create', (request, response) => {
+    if (!request.body){
+        response.status(400).send('Bad Request');
+    }
+
+    const data = request.body;
+    const treeData = JSON.parse(localStorage.getItem('tree_data'));
+
+    data.node['id'] = parseInt(data.node['id']);
+    data.node["children"] = []; // initializing children 
+    data.node["parent"] = data.parentId;
+
+
+    var index = -1;
+    var middleIndex = -1
+    treeData.forEach((x,i) => {
+        if ( data.node.id == x.id ) {
+            response.status(400).send('Error, id exists');
+        }
+        if ( data.node.id < x.id  ) {
+            middleIndex = i;
+        }
+        index = i;
+    })
+    index++;
+    middleIndex++;
+
+    // if the new node finds space in the middle of the tree
+    if (index < middleIndex) {
+        treeData.splice(middleIndex, 0, data.node);
+    } else {
+        treeData.splice(index, 0, data.node);
+    }
+   
+    var parentIndex = treeData.findIndex(x => {
+        return x.id == data.parentId
+    })
+    
+    if (parentIndex === -1) {
+        response.status(400).send('Error, parent id does not exists');
+    }
+
+    treeData[parentIndex].children.push(data.node);
+
+    console.log(treeData);
+    response.status(204).send('Update Success');
 
 })
 
