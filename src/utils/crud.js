@@ -4,7 +4,7 @@ import axios from './axios';
 const get_tree = async () => {
     const response = await axios ({
       method: 'get',
-      url: `/`, 
+      url: `/data`, 
     }).then(response => {
       console.log(response);
     }).catch(err => {

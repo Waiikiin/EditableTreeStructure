@@ -20,7 +20,7 @@ app.use(cors({
 }))
 app.use(express.json());
 
-app.get('/', async (request, response) => {
+app.get('/data', async (request, response) => {
     const file = fs.createReadStream('data/tree_data.csv');
     
     const readFilePromise = (file) => new Promise ((resolve, reject) => {
@@ -73,6 +73,7 @@ app.get('/', async (request, response) => {
 app.get('/export', (request, response) => {
     const treeData = JSON.parse(localStorage.getItem('tree_data'));
 
+    console.log(treeData)
     // remove the children
     treeData.forEach(x => {
         delete x.children;
@@ -120,6 +121,7 @@ app.post('/delete', (request, response) => {
     const data = request.body;
     const treeData = JSON.parse(localStorage.getItem('tree_data'));
 
+    var index = -1;
     var result = treeData.find((x,i) => {
         if ( x.id == data.id ) {
             index = i;

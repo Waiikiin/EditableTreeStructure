@@ -4,9 +4,14 @@ import { makeStyles } from '@material-ui/core/styles';
 import TreeView from '@material-ui/lab/TreeView';
 import TreeItem from '@material-ui/lab/TreeItem';
 import TextField from "@material-ui/core/TextField";
+import DeleteIcon from '@material-ui/icons/Delete';
+import UpdateIcon from '@material-ui/icons/Update';
+import GetAppIcon from '@material-ui/icons/GetApp';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
 import { Button } from '@material-ui/core';
 
 import axios from '../utils/axios';
+import './CustomTreeView.css'
 
 function MinusSquare(props) {
   return (
@@ -36,16 +41,20 @@ function CloseSquare(props) {
 }
 
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   root: {
-    height: 264,
+    height: '100%',
     flexGrow: 1,
     maxWidth: 350,
+    margin: 'auto',
   },
   inputInput: {
     padding: "4px 8px"
-  }
-});
+  },
+  button: {
+    margin: theme.spacing(1),
+  },
+}));
 
 
 function CustomTreeView(props) {
@@ -61,7 +70,7 @@ function CustomTreeView(props) {
     const fetchTree = async () => {
       const response = await axios ({
         method: 'get',
-        url: `/`, 
+        url: `/data`, 
       }).then(response => {
         setTree(response.data);
       }).catch(err => {
@@ -112,48 +121,141 @@ function CustomTreeView(props) {
   const onUpdate = async (event) => {
     event.preventDefault();
 
+    const response = await axios ({
+      method: 'post',
+      url: `/update`,
+      data: {
+        id: currentId,
+        name: value,
+      }
+    }).then(response => {
+ 
+      var result = tree.find(x => {
+        return x.id == currentId
+      });
 
+      result.name = value;
+    }).catch(err => {
+      console.error(err);
+    })
+  }
+    
+  const onDelete = async (event) => {
+    event.preventDefault();
 
+    const response = await axios ({
+      method: 'post',
+      url: `/delete`,
+      data: {
+        id: currentId,
+      }
+    }).then(response => {
+
+      var index = -1;
+      var result = tree.find((x,i) => {
+        index = i;
+        return x.id == currentId
+      });
+
+      tree.splice(index,1);
+    }).catch(err => {
+      console.error(err);
+    })
+  }
+
+  const onCreate = async (event) => {
+    event.preventDefault();
+
+    // const response = await axios ({
+    //   method: 'post',
+    //   url: `/create`,
+    //   data: {
+    //     parentId: parentId,
+    //     node: {
+    //       id: '',
+    //       parent: '',
+    //       ...node,
+    //     },
+    //   }
+    // }).then(response => {
+    //   console.log(response);
+    // }).catch(err => {
+    //   console.error(err);
+    // })
+  }
+
+  const onDownload = async (event) => {
+    event.preventDefault();
+
+    const response = await axios ({
+      method: 'get',
+      url: `/export`,
+    }).then(response => {
+      console.log(response);
+
+      const blob = new Blob([response.data], {type: 'text/csv'});
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'download.csv');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }).catch(err => {
+      console.error(err);
+    })
+  }
+  
   return (
-    <TreeView
-      className={classes.root}
-      defaultExpanded={['1']}
-      defaultCollapseIcon={<MinusSquare />}
-      defaultExpandIcon={<PlusSquare />}
-      defaultEndIcon={<CloseSquare />}
-      onNodeSelect={handleNodeSelect}
-    >
-    <form noValidate autoComplete="off" >
-      {buildTree(tree)}
+    <div className="customTreeView">
+      <div className="title"> <h2> Tree Structure Nodes</h2></div> 
+      <div className="treeContainer">
+        <TreeView
+          className={classes.root}
+          defaultExpanded={['1']}
+          defaultCollapseIcon={<MinusSquare />}
+          defaultExpandIcon={<PlusSquare />}
+          defaultEndIcon={<CloseSquare />}
+          onNodeSelect={handleNodeSelect}
+        >
+          {buildTree(tree)}
+        
+        </TreeView>
+
+        <div className="buttons">
+          <div className="buttons-curd">
+            <Button 
+              className={classes.button}
+              startIcon={<AddCircleIcon />}
+              variant="contained" 
+              color="primary"
+              onClick={onCreate}> Create </Button>
+
+            <Button 
+              variant="contained"
+              color="secondary"
+              className={classes.button}
+              startIcon={<UpdateIcon />}
+              onClick={onUpdate}> Update </Button>
+            <Button 
+                variant="contained"
+                color="default"
+                className={classes.button}
+                startIcon={<DeleteIcon />}
+                onClick={onDelete}> Delete </Button>
+
+          </div>
+          <Button
+            className={classes.button}
+            startIcon={<GetAppIcon />}
+            variant="contained" 
+            color="primary"
+            onClick={onDownload}> Download CSV </Button>
+        </div>
+      </div>
       
-      {/* <TreeItem nodeId="1" label="Applications">
-          <TreeItem
-            id='2'
-            nodeId="2"
-            label={
-              "sdfdsf"
-            }
-            onDoubleClick={handleDBClick}
-          />
-          <TreeItem nodeId="3" label="Chrome" />
-          <TreeItem nodeId="4" label="Webstorm" />
-        </TreeItem>
-        <TreeItem nodeId="5" label="Documents">
-          <TreeItem nodeId="6" label="Material-UI">
-            <TreeItem nodeId="7" label="src">
-              <TreeItem nodeId="8" label="index.js" />
-              <TreeItem nodeId="9" label="tree-view.js" />
-            </TreeItem>
-          </TreeItem>
-        </TreeItem> */}
-
-
-      </form>
-      <Button onClick={onUpdate}> Update </Button>
-      <Button> Delete </Button>
-      <Button> Create </Button>
-      <Button> Download CSV </Button>
-    </TreeView>
+    </div>
   );
 }
 
