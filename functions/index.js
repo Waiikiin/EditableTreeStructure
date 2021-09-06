@@ -23,7 +23,6 @@ app.use(express.json());
 
 const buildTree = (arr) => {
     let map = {}, node, i;
-    // let tree = []
 
     // must sort the array in a map first
     for (i = 0; i < arr.length; i += 1) {
@@ -41,14 +40,11 @@ const buildTree = (arr) => {
             // get the parent id, grab the index in map, access it in array
             arr[map[node.parent]].children.push(node); // push node to parent
         }
-        // else {
-        //     tree.push(node);
-        // };
     };
     return arr;
 }
 
-app.get('/data', async (request, response) => {
+app.get('/', async (request, response) => {
     const file = fs.createReadStream('data/tree_data.csv');
     
     const readFilePromise = (file) => new Promise ((resolve, reject) => {
@@ -58,8 +54,6 @@ app.get('/data', async (request, response) => {
             complete: function(results, file) {
 
                 const tree = buildTree(results.data)
-
-                console.log(tree);
 
                 localStorage.setItem('tree_data', JSON.stringify(tree) );
 
@@ -77,17 +71,21 @@ app.get('/data', async (request, response) => {
 
 })
 
+app.get('/data', async (request, response) => {
+    const treeData = JSON.parse(localStorage.getItem('tree_data'));
+    console.log(treeData);
+    response.status(201).send(treeData);
+})
+
 
 app.get('/export', (request, response) => {
     const treeData = JSON.parse(localStorage.getItem('tree_data'));
 
-    console.log(treeData)
     // remove the children
     treeData.forEach(x => {
         delete x.children;
     })
 
-    // const readFilePromise = (treeData) => new Promise ((resolve, reject) => {
     const csv = papa.unparse(treeData, {
         delimiter: '\t',
         header: true,
@@ -114,7 +112,6 @@ app.post('/update', (request, response) => {
         result.name = data.name;
 
         const newTree = buildTree(treeData)
-        console.log(newTree);
 
         localStorage.setItem('tree_data', JSON.stringify(newTree) );
         
@@ -145,7 +142,6 @@ app.post('/delete', (request, response) => {
         treeData.splice(index,1);
 
         const newTree = buildTree(treeData)
-        console.log(newTree);
 
         localStorage.setItem('tree_data', JSON.stringify(newTree) );
         response.status(204).send('Delete Success');
@@ -163,18 +159,15 @@ app.post('/create', (request, response) => {
     const data = request.body;
     const treeData = JSON.parse(localStorage.getItem('tree_data'));
 
-    data.node["children"] = []; // initializing children 
-    data.node["parent"] = data.parentId;
+    data.node.children = []; // initializing children 
+    data.node.parent= data.parentId;
 
-    data.node['id'] = parseInt(treeData[treeData.length-1].id) + 1;
+    data.node.id = parseInt(treeData[treeData.length-1].id) + 1;
 
     // make sure the array that contains the tree is still in order after inserting this new node
     var index = -1;
     var middleIndex = -1
     treeData.forEach((x,i) => {
-        if ( data.node.id == x.id ) {
-            response.status(400).send('Error, id exists');
-        }
         if ( data.node.id < x.id  ) {
             middleIndex = i;
         }
@@ -184,24 +177,15 @@ app.post('/create', (request, response) => {
     middleIndex++;
 
     // if the new node fits in the middle of the tree, otherwise
-    if (index < middleIndex) {
+    if (middleIndex > 0) {
         treeData.splice(middleIndex, 0, data.node);
     } else {
         treeData.splice(index, 0, data.node);
     }
 
-    treeData.splice(middleIndex, 0, data.node);
-   
-    var parentIndex = treeData.findIndex(x => {
-        return x.id == data.parentId
-    })
-    
-    if (parentIndex === -1) {
-        response.status(400).send('Error, parent id does not exists');
-    }
+    const newTree = buildTree(treeData);
 
-    treeData[parentIndex].children.push(data.node);
-    localStorage.setItem('tree_data', JSON.stringify(treeData) );
+    localStorage.setItem('tree_data', JSON.stringify(newTree) );
     response.status(204).send(`Create Success, created id: ${data.node.id}`);
 })
 

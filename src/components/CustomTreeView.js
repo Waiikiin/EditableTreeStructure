@@ -67,20 +67,31 @@ function CustomTreeView(props) {
   const [currentId, setCurrentId] = useState(-1);
   const [dbClickedId, setDbClickedId] = useState(-1);
 
+  const fetchTree = async () => {
+    const response = await axios ({
+      method: 'get',
+      url: `/data`, 
+    }).then(response => {
+      setTree(response.data);
+    }).catch(err => {
+      console.error(err);
+    })
+  }
+  const fetchNewTree = async () => {
+    const response = await axios ({
+      method: 'get',
+      url: `/`, 
+    }).then(response => {
+      setTree(response.data);
+    }).catch(err => {
+      console.error(err);
+    })
+  }
+
   useEffect(() => {
-    const fetchTree = async () => {
-      const response = await axios ({
-        method: 'get',
-        url: `/data`, 
-      }).then(response => {
-        setTree(response.data);
-      }).catch(err => {
-        console.error(err);
-      })
-    }
-    
-    fetchTree();
+    fetchNewTree();
   }, [])
+
 
   const handleChange = (event, read_only) => {
     // console.log(event)
@@ -127,12 +138,13 @@ function CustomTreeView(props) {
         name: value,
       }
     }).then(response => {
- 
-      var result = tree.find(x => {
-        return x.id == currentId
-      });
+      
+      fetchTree()
+      // var result = tree.find(x => {
+      //   return x.id == currentId
+      // });
 
-      result.name = value;
+      // result.name = value;
     }).catch(err => {
       console.error(err);
     })
@@ -146,38 +158,17 @@ function CustomTreeView(props) {
         id: currentId,
       }
     }).then(response => {
+      fetchTree()
+      // var index = -1;
+      // var result = tree.find((x,i) => {
+      //   index = i;
+      //   return x.id == currentId
+      // });
 
-      var index = -1;
-      var result = tree.find((x,i) => {
-        index = i;
-        return x.id == currentId
-      });
-
-      tree.splice(index,1);
+      // tree.splice(index,1);
     }).catch(err => {
       console.error(err);
     })
-  }
-
-  const onCreate = async (event) => {
-    event.preventDefault();
-
-    // const response = await axios ({
-    //   method: 'post',
-    //   url: `/create`,
-    //   data: {
-    //     parentId: parentId,
-    //     node: {
-    //       id: '',
-    //       parent: '',
-    //       ...node,
-    //     },
-    //   }
-    // }).then(response => {
-    //   console.log(response);
-    // }).catch(err => {
-    //   console.error(err);
-    // })
   }
 
   const onDownload = async (event) => {
@@ -201,26 +192,9 @@ function CustomTreeView(props) {
     })
   }
 
-//   //update node in parent
-//   const insertNode = (tree, node) => {
-//     var result = tree.find((x,i) => { => {
-//         if (x.id == node.parentId) {
-//           if (tree[i].children.length === 0) {
-//             tree[i].children[0] = newNode;
-//           } else {
-//             console.log(tree[i].children.length);
-//             tree[i].children[tree[i].children.length] = newNode;
-//           }
-
-//           //continue update the node inside   
-//           var result = tree.find
-//         }
-//     });
-// }
-  const onInsert = () => {
-
+  const onInsert = async () => {
     const newNode = {
-      id: tree.length.toString(),
+      id: toString(tree.length),
       name: `Node ${tree.length}`,
       description: `Node description ${tree.length}`,
       parent: currentId,
@@ -228,23 +202,26 @@ function CustomTreeView(props) {
       children: null,
     }
 
-    // find the index
-    // var index = -1;
-    // var result = tree.find((x,i) => {
-    //     if ( x.id == currentId ) {
-    //       index = i;
-    //       return true;
-    //   }
-    // });
-    //push new node in the end of the list
-    tree[tree.length-1] = newNode;
-    // push new node under the parent
-    // insertNode(tree, newNode)
+    const response = await axios ({
+      method: 'post',
+      url: `/create`,
+      data: {
+        parentId: currentId,
+        node: {
+          id: newNode.id,
+          name: newNode.name,
+          description: newNode.description,
+          parent: newNode.parent,
+          read_only: newNode.read_only,
+          children: newNode.children,
+        },
+      }
+    }).then(response => {
+      fetchTree()
+    }).catch(err => {
+      console.error(err);
+    })
 
-
-    
-
-    console.log(tree);
   }
   
   return (
@@ -266,6 +243,8 @@ function CustomTreeView(props) {
 
     
         <div className="buttons">
+
+          <div className="buttons-crud">
             <Button 
               className={classes.button}
               startIcon={<PlaylistAddIcon />}
@@ -273,13 +252,6 @@ function CustomTreeView(props) {
               variant="outlined" 
               onClick={onInsert}> Insert </Button>
 
-          <div className="buttons-crud">
-            <Button 
-              className={classes.button}
-              startIcon={<AddCircleIcon />}
-              variant="contained" 
-              color="primary"
-              onClick={onCreate}> Create </Button>
 
             <Button 
               variant="contained"
