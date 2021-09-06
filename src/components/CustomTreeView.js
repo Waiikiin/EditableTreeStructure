@@ -8,6 +8,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import UpdateIcon from '@material-ui/icons/Update';
 import GetAppIcon from '@material-ui/icons/GetApp';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
+import PlaylistAddIcon from '@material-ui/icons/PlaylistAdd';
 import { Button } from '@material-ui/core';
 
 import axios from '../utils/axios';
@@ -97,7 +98,7 @@ function CustomTreeView(props) {
           ?
           <TextField
             value={value ? value : setValue(node.name)}
-            variant="outlined"
+            variant="standard"
             InputProps={{ classes: { input: classes.inputInput } }}
             onChange={ event => handleChange(event, node.read_only)}
             disabled={node.read_only > 0 ? true : false}
@@ -113,14 +114,11 @@ function CustomTreeView(props) {
 
 
   const handleNodeSelect = (event, value) => {
-    event.preventDefault();
     setCurrentId(value);
     setValue(null);
   }
 
   const onUpdate = async (event) => {
-    event.preventDefault();
-
     const response = await axios ({
       method: 'post',
       url: `/update`,
@@ -141,8 +139,6 @@ function CustomTreeView(props) {
   }
     
   const onDelete = async (event) => {
-    event.preventDefault();
-
     const response = await axios ({
       method: 'post',
       url: `/delete`,
@@ -185,8 +181,6 @@ function CustomTreeView(props) {
   }
 
   const onDownload = async (event) => {
-    event.preventDefault();
-
     const response = await axios ({
       method: 'get',
       url: `/export`,
@@ -206,11 +200,58 @@ function CustomTreeView(props) {
       console.error(err);
     })
   }
+
+//   //update node in parent
+//   const insertNode = (tree, node) => {
+//     var result = tree.find((x,i) => { => {
+//         if (x.id == node.parentId) {
+//           if (tree[i].children.length === 0) {
+//             tree[i].children[0] = newNode;
+//           } else {
+//             console.log(tree[i].children.length);
+//             tree[i].children[tree[i].children.length] = newNode;
+//           }
+
+//           //continue update the node inside   
+//           var result = tree.find
+//         }
+//     });
+// }
+  const onInsert = () => {
+
+    const newNode = {
+      id: tree.length.toString(),
+      name: `Node ${tree.length}`,
+      description: `Node description ${tree.length}`,
+      parent: currentId,
+      read_only: '0',
+      children: null,
+    }
+
+    // find the index
+    // var index = -1;
+    // var result = tree.find((x,i) => {
+    //     if ( x.id == currentId ) {
+    //       index = i;
+    //       return true;
+    //   }
+    // });
+    //push new node in the end of the list
+    tree[tree.length-1] = newNode;
+    // push new node under the parent
+    // insertNode(tree, newNode)
+
+
+    
+
+    console.log(tree);
+  }
   
   return (
     <div className="customTreeView">
       <div className="title"> <h2> Tree Structure Nodes</h2></div> 
       <div className="treeContainer">
+        
         <TreeView
           className={classes.root}
           defaultExpanded={['1']}
@@ -223,8 +264,16 @@ function CustomTreeView(props) {
         
         </TreeView>
 
+    
         <div className="buttons">
-          <div className="buttons-curd">
+            <Button 
+              className={classes.button}
+              startIcon={<PlaylistAddIcon />}
+              color="secondary"
+              variant="outlined" 
+              onClick={onInsert}> Insert </Button>
+
+          <div className="buttons-crud">
             <Button 
               className={classes.button}
               startIcon={<AddCircleIcon />}

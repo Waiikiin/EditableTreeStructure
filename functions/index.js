@@ -20,6 +20,34 @@ app.use(cors({
 }))
 app.use(express.json());
 
+
+const buildTree = (arr) => {
+    let map = {}, node, i;
+    // let tree = []
+
+    // must sort the array in a map first
+    for (i = 0; i < arr.length; i += 1) {
+        // initializing map
+        // sort out the index of array id in map
+        // key: id, value: index in the array
+        map[arr[i].id] = i; 
+        arr[i]["children"] = []; // initializing children 
+    };
+
+
+    for (i = 0; i < arr.length; i += 1) {
+        node = arr[i];
+        if (node.parent !== "0") {
+            // get the parent id, grab the index in map, access it in array
+            arr[map[node.parent]].children.push(node); // push node to parent
+        }
+        // else {
+        //     tree.push(node);
+        // };
+    };
+    return arr;
+}
+
 app.get('/data', async (request, response) => {
     const file = fs.createReadStream('data/tree_data.csv');
     
@@ -28,34 +56,14 @@ app.get('/data', async (request, response) => {
             skipEmptyLines: true,
             header: true,
             complete: function(results, file) {
-                
-                const arr = results.data;
-                let map = {}, node, i;
-                // let tree = []
 
-                // must sort the array in a map first
-                for (i = 0; i < arr.length; i += 1) {
-                    // initializing map
-                    // sort out the index of array id in map
-                    // key: id, value: index in the array
-                    map[arr[i].id] = i; 
-                    arr[i]["children"] = []; // initializing children 
-                };
+                const tree = buildTree(results.data)
 
+                console.log(tree);
 
-                for (i = 0; i < arr.length; i += 1) {
-                    node = arr[i];
-                    if (node.parent !== "0") {
-                        // get the parent id, grab the index in map, access it in array
-                        arr[map[node.parent]].children.push(node); // push node to parent
-                    }
-                    // else {
-                    //     tree.push(node);
-                    // };
-                };
-                localStorage.setItem('tree_data', JSON.stringify(results.data) );
+                localStorage.setItem('tree_data', JSON.stringify(tree) );
 
-                resolve(results.data);
+                resolve(tree);
             },
         })
     }).then(results => {
@@ -104,7 +112,11 @@ app.post('/update', (request, response) => {
 
     if (result && result.read_only < 1) {
         result.name = data.name;
-        localStorage.setItem('tree_data', JSON.stringify(treeData) );
+
+        const newTree = buildTree(treeData)
+        console.log(newTree);
+
+        localStorage.setItem('tree_data', JSON.stringify(newTree) );
         
         response.status(204).send('Update Success');
     } else {
@@ -131,7 +143,11 @@ app.post('/delete', (request, response) => {
 
     if (result && result.read_only < 1) {
         treeData.splice(index,1);
-        localStorage.setItem('tree_data', JSON.stringify(treeData) );
+
+        const newTree = buildTree(treeData)
+        console.log(newTree);
+
+        localStorage.setItem('tree_data', JSON.stringify(newTree) );
         response.status(204).send('Delete Success');
     } else {
         response.status(405).send('Error, this node is read only');
